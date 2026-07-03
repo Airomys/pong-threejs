@@ -363,6 +363,9 @@ window.addEventListener('keyup', e => {
 
 // ── Touch: metà sinistra = P1, metà destra = P2 ──
 window.addEventListener('touchstart', e => {
+  // Non bloccare il touch se si sta cliccando un pulsante o se si è nel menu
+  if (e.target.closest && (e.target.closest('button') || e.target.closest('.glass'))) return;
+  
   e.preventDefault();
   for (const t of e.changedTouches) {
     const norm = 1 - (t.clientY / window.innerHeight) * 2;
@@ -375,6 +378,7 @@ window.addEventListener('touchstart', e => {
 }, { passive: false });
 
 window.addEventListener('touchmove', e => {
+  if (e.target.closest && (e.target.closest('button') || e.target.closest('.glass'))) return;
   e.preventDefault();
   for (const t of e.touches) {
     const norm = 1 - (t.clientY / window.innerHeight) * 2;
