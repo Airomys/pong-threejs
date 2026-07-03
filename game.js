@@ -56,18 +56,35 @@ camera.position.set(0, 0, 24);
 camera.lookAt(0, 0, 0);
 
 function onResize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  const aspect = window.innerWidth / window.innerHeight;
-  camera.aspect = aspect;
+  const targetAspect = 16 / 9;
+  let w = window.innerWidth;
+  let h = window.innerHeight;
   
-  // Calcolo FOV e Z per garantire che la larghezza (FIELD_W + margine) sia visibile
+  if (w / h > targetAspect) {
+    w = h * targetAspect; // Schermo troppo largo
+  } else {
+    h = w / targetAspect; // Schermo troppo alto
+  }
+  
+  renderer.setSize(w, h);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  
+  camera.aspect = targetAspect;
   const fovRad = (camera.fov * Math.PI) / 360;
-  const requiredZ = (FIELD_W + 4) / (2 * Math.tan(fovRad) * aspect);
+  const requiredZ = (FIELD_W + 4) / (2 * Math.tan(fovRad) * targetAspect);
   camera.position.z = Math.max(24, requiredZ);
   
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => {
+  if (Math.abs(window.orientation) === 90) { // Landscape
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
+});
 onResize();
 
 // ─────────────────────────────────────────────
@@ -112,6 +129,33 @@ const matWallGlow = new THREE.MeshBasicMaterial({ color: 0x00f5ff, transparent: 
 const matCenterLine = new THREE.MeshBasicMaterial({ color: 0x00f5ff, transparent: true, opacity: 0.2 });
 const matGrid = new THREE.LineBasicMaterial({ color: 0x00f5ff, transparent: true, opacity: 0.07 });
 const matCircle = new THREE.LineBasicMaterial({ color: 0x00f5ff, transparent: true, opacity: 0.22 });
+
+// ─────────────────────────────────────────────
+//  POWER-UPS SYSTEM
+// ─────────────────────────────────────────────
+const powerUpTypes = ['speed', 'slow', 'enlarge'];
+const powerUpColors = { 'speed': 0xffa500, 'slow': 0x00bfff, 'enlarge': 0x32cd32 };
+let powerups = []; // { mesh, type, x, y }
+let activeEffects = { enlargeL: 0, enlargeR: 0 };
+let lastHit = null; // 'left' or 'right'
+
+function spawnPowerUp() {
+  if (state.phase !== 'playing' || powerups.length >= 2) return;
+  const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+  const px = (Math.random() - 0.5) * (FIELD_W * 0.6);
+  const py = (Math.random() - 0.5) * (FIELD_H * 0.7);
+  
+  const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  const mat = new THREE.MeshStandardMaterial({ 
+    color: powerUpColors[type], emissive: powerUpColors[type], emissiveIntensity: 0.8 
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(px, py, 0);
+  scene.add(mesh);
+  
+  powerups.push({ mesh, type, x: px, y: py });
+}
+setInterval(spawnPowerUp, 7000); // Prova a generare ogni 7 secondi
 
 // ─────────────────────────────────────────────
 //  COSTRUZIONE SCENA
@@ -394,6 +438,13 @@ function beginRound() {
   state.phase = 'countdown';
   resetBall();
   trailHistory.length = 0;
+  
+  powerups.forEach(pu => scene.remove(pu.mesh));
+  powerups = [];
+  activeEffects = { enlargeL: 0, enlargeR: 0 };
+  if (meshPaddleL) meshPaddleL.scale.y = 1;
+  if (meshPaddleR) meshPaddleR.scale.y = 1;
+  lastHit = null;
 
   let count = 3;
   showCountdown(count);
@@ -480,8 +531,16 @@ const P_ACCEL  = 90;   // accelerazione (unità/s²)
 const P_MAX    = PADDLE_SPEED;
 const P_DAMP   = 0.08; // smorzamento al rilascio (0=stop istantaneo, 1=nessun freno)
 
+function getPaddleH(side) {
+  return PADDLE_H * (side === 'left' ? meshPaddleL.scale.y : meshPaddleR.scale.y);
+}
+
+function maxPY(side) {
+  return FIELD_H / 2 - getPaddleH(side) / 2 - 0.05;
+}
+
 function movePaddle(side, upKey, downKey, dt) {
-  const limit = maxPY();
+  const limit = maxPY(side);
 
   if (touchState[side].id !== null && touchState[side].y !== null) {
     // Touch: posizionamento diretto, smorzato
@@ -528,6 +587,9 @@ function update(dt) {
 
   // Collisioni paddle
   collidePaddle();
+  
+  // Power Ups
+  updatePowerUps(dt);
 
   // Gol
   const goalX = FIELD_W / 2 + 1;
@@ -535,34 +597,65 @@ function update(dt) {
   if (ball.x >  goalX) { scorePoint(0); return; }
 }
 
-function maxPY() {
-  return FIELD_H / 2 - PADDLE_H / 2 - 0.05;
+function updatePowerUps(dt) {
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const pu = powerups[i];
+    pu.mesh.rotation.x += dt * 2;
+    pu.mesh.rotation.y += dt * 3;
+    
+    // Collisione palla
+    const dx = ball.x - pu.x;
+    const dy = ball.y - pu.y;
+    if (Math.hypot(dx, dy) < BALL_RADIUS + 0.6) {
+      if (pu.type === 'speed') {
+        ball.speed = Math.min(ball.speed * 1.6, 30);
+      } else if (pu.type === 'slow') {
+        ball.speed = Math.max(ball.speed * 0.55, 8);
+      } else if (pu.type === 'enlarge' && lastHit) {
+        if (lastHit === 'left') activeEffects.enlargeL = 5; // 5 secondi
+        else activeEffects.enlargeR = 5;
+      }
+      scene.remove(pu.mesh);
+      powerups.splice(i, 1);
+    }
+  }
+  
+  // Gestione timer ingrandimento
+  if (activeEffects.enlargeL > 0) activeEffects.enlargeL -= dt;
+  if (activeEffects.enlargeR > 0) activeEffects.enlargeR -= dt;
+  
+  meshPaddleL.scale.y = activeEffects.enlargeL > 0 ? 1.6 : 1;
+  meshPaddleR.scale.y = activeEffects.enlargeR > 0 ? 1.6 : 1;
 }
 
 function collidePaddle() {
   // ── Paddle sinistro ──
   const lx  = -(FIELD_W / 2 - 1.0);
   const lFront = lx + PADDLE_W / 2 + BALL_RADIUS;
+  const pHL = getPaddleH('left');
   if (ball.vx < 0 && ball.x <= lFront && ball.x >= lx - PADDLE_W / 2) {
-    if (Math.abs(ball.y - paddles.left) < PADDLE_H / 2 + BALL_RADIUS * 0.6) {
+    if (Math.abs(ball.y - paddles.left) < pHL / 2 + BALL_RADIUS * 0.6) {
       ball.x = lFront;
-      deflect(paddles.left, 1);
+      lastHit = 'left';
+      deflect(paddles.left, 1, pHL);
     }
   }
 
   // ── Paddle destro ──
   const rx  = FIELD_W / 2 - 1.0;
   const rFront = rx - PADDLE_W / 2 - BALL_RADIUS;
+  const pHR = getPaddleH('right');
   if (ball.vx > 0 && ball.x >= rFront && ball.x <= rx + PADDLE_W / 2) {
-    if (Math.abs(ball.y - paddles.right) < PADDLE_H / 2 + BALL_RADIUS * 0.6) {
+    if (Math.abs(ball.y - paddles.right) < pHR / 2 + BALL_RADIUS * 0.6) {
       ball.x = rFront;
-      deflect(paddles.right, -1);
+      lastHit = 'right';
+      deflect(paddles.right, -1, pHR);
     }
   }
 }
 
-function deflect(paddleY, dirX) {
-  const relHit = Math.max(-1, Math.min(1, (ball.y - paddleY) / (PADDLE_H / 2)));
+function deflect(paddleY, dirX, currentPaddleH) {
+  const relHit = Math.max(-1, Math.min(1, (ball.y - paddleY) / (currentPaddleH / 2)));
   const angle  = relHit * 0.82; // max ~47°
   ball.vx = Math.cos(angle) * dirX;
   ball.vy = Math.sin(angle);
@@ -585,21 +678,31 @@ function deflect(paddleY, dirX) {
 let aiTargetOffset = 0;
 
 function updateAITargetError() {
-  const err = state.difficulty === 'easy' ? 1.9 : state.difficulty === 'medium' ? 0.85 : 0.22;
-  aiTargetOffset = (Math.random() - 0.5) * err;
+  const diff = state.difficulty;
+  const missChance = diff === 'easy' ? 0.30 : diff === 'medium' ? 0.10 : 0.02;
+  
+  if (Math.random() < missChance) {
+    // Errore critico: manca la palla
+    const sign = Math.random() > 0.5 ? 1 : -1;
+    aiTargetOffset = sign * (PADDLE_H * 1.5 + BALL_RADIUS * 2);
+  } else {
+    // Imprecisione standard
+    const err = diff === 'easy' ? 1.5 : diff === 'medium' ? 0.7 : 0.15;
+    aiTargetOffset = (Math.random() - 0.5) * err;
+  }
 }
 
 function updateAI(dt) {
   const speedFactor = AI_SPEED[state.difficulty] || AI_SPEED.medium;
   let target = predictBallY();
 
-  // Usa l'offset costante invece di casualità per-frame (evita jitter)
+  // Usa l'offset calcolato
   target += aiTargetOffset;
-  target = Math.max(-maxPY(), Math.min(maxPY(), target));
+  target = Math.max(-maxPY('right'), Math.min(maxPY('right'), target));
 
   const diff = target - paddles.right;
   const step = Math.sign(diff) * Math.min(Math.abs(diff), PADDLE_SPEED * speedFactor * 60 * dt);
-  paddles.right = Math.max(-maxPY(), Math.min(maxPY(), paddles.right + step));
+  paddles.right = Math.max(-maxPY('right'), Math.min(maxPY('right'), paddles.right + step));
 }
 
 function predictBallY() {
