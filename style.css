@@ -394,4 +394,26 @@ html, body {
   .score-colon { font-size: 1rem; }
   .player-label { font-size: 0.4rem; }
   #btn-pause { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 0.9rem; }
+  
+  /* Menu di avvio responsive */
+  .glass {
+    padding: 20px 24px;
+    gap: 12px;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+  .logo-title { font-size: 2.2rem; }
+  .logo-sub { margin-top: 0px; }
+  .mode-btn { padding: 10px 14px; gap: 8px; font-size: 0.85rem; }
+  .btn-primary { padding: 12px 20px; font-size: 0.8rem; }
+  .diff-btn { padding: 8px 0; font-size: 0.55rem; }
+}
+
+@media screen and (max-height: 400px) {
+  /* Ulteriore ottimizzazione se lo schermo è molto basso (es. landscape) */
+  .glass { padding: 12px 20px; gap: 8px; }
+  .logo-title { font-size: 1.8rem; }
+  .mode-btns { flex-direction: row; }
+  .mode-btn { flex: 1; padding: 8px; justify-content: center; }
+  .controls-hint { display: none; /* Nascondi i comandi tastiera per fare spazio */ }
 }
