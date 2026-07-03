@@ -371,3 +371,18 @@ html, body {
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { display: none; }
+
+/* ─── Rotate Device Overlay ─── */
+#rotate-overlay {
+  display: none;
+  z-index: 1000;
+  background: var(--bg-dark);
+}
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+  #rotate-overlay {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+  }
+}

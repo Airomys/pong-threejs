@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>PONG 3D — Neon Arena</title>
   <meta name="description" content="Un gioco Pong 3D con grafica neon, effetti di luce e intelligenza artificiale, realizzato con Three.js." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -70,6 +70,14 @@
         <button id="btn-rematch" class="btn-primary" aria-label="Rivincita">RIVINCITA</button>
         <button id="btn-menu"    class="btn-secondary" aria-label="Torna al menu">MENU</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── OVERLAY: ROTATE DEVICE ── -->
+  <div id="rotate-overlay" class="overlay">
+    <div class="menu-card glass">
+      <h2 class="winner-title" style="font-size: 1.8rem;">RUOTA IL DISPOSITIVO</h2>
+      <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.9rem;">Per favore, usa il dispositivo in orizzontale per giocare.</p>
     </div>
   </div>
 

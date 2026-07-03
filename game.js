@@ -310,19 +310,22 @@ window.addEventListener('keyup', e => {
   delete keys[e.code];
 });
 
-// ── Touch: metà sinistra = P1, metà destra = P2 ──
-window.addEventListener('touchmove', e => {
-  e.preventDefault();
+// ── Touch: metà sinistra = P1, metà destra = P2 (Supporto Multi-Touch) ──
+function handleTouches(e) {
+  if (e.cancelable) e.preventDefault();
   touchYNorm.left  = null;
   touchYNorm.right = null;
-  for (const t of e.touches) {
+  for (let i = 0; i < e.touches.length; i++) {
+    const t = e.touches[i];
     const norm = 1 - (t.clientY / window.innerHeight) * 2;
     if (t.clientX < window.innerWidth / 2) touchYNorm.left  = norm;
     else                                   touchYNorm.right = norm;
   }
-}, { passive: false });
-window.addEventListener('touchend',   () => { touchYNorm.left = null; touchYNorm.right = null; });
-window.addEventListener('touchcancel',() => { touchYNorm.left = null; touchYNorm.right = null; });
+}
+window.addEventListener('touchstart', handleTouches, { passive: false });
+window.addEventListener('touchmove', handleTouches, { passive: false });
+window.addEventListener('touchend', handleTouches);
+window.addEventListener('touchcancel', handleTouches);
 
 // ─────────────────────────────────────────────
 //  GAME FLOW
@@ -547,16 +550,25 @@ function deflect(paddleY, dirX) {
 // ─────────────────────────────────────────────
 //  IA
 // ─────────────────────────────────────────────
+let aiTargetY = 0;
+let aiCalculated = false;
+
 function updateAI(dt) {
   const speedFactor = AI_SPEED[state.difficulty] || AI_SPEED.medium;
-  let target = predictBallY();
+  
+  if (ball.vx <= 0) {
+    aiTargetY = 0; // La palla si allontana, torna al centro
+    aiCalculated = false;
+  } else if (!aiCalculated) {
+    let target = predictBallY();
+    // Errore calcolato una sola volta per direzione per evitare tremolio
+    const err = state.difficulty === 'easy' ? 1.9 : state.difficulty === 'medium' ? 0.85 : 0.22;
+    target += (Math.random() - 0.5) * err;
+    aiTargetY = Math.max(-maxPY(), Math.min(maxPY(), target));
+    aiCalculated = true;
+  }
 
-  // Errore proporzionale alla difficoltà
-  const err = state.difficulty === 'easy' ? 1.9 : state.difficulty === 'medium' ? 0.85 : 0.22;
-  target += (Math.random() - 0.5) * err;
-  target = Math.max(-maxPY(), Math.min(maxPY(), target));
-
-  const diff = target - paddles.right;
+  const diff = aiTargetY - paddles.right;
   const step = Math.sign(diff) * Math.min(Math.abs(diff), PADDLE_SPEED * speedFactor * 60 * dt);
   paddles.right = Math.max(-maxPY(), Math.min(maxPY(), paddles.right + step));
 }
