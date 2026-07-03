@@ -396,13 +396,20 @@ window.addEventListener('touchcancel', handleTouchEnd);
 //  GAME FLOW
 // ─────────────────────────────────────────────
 function startGame() {
-  // Richiesta Fullscreen e blocco orientamento
-  if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().then(() => {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {});
+  // Richiesta Fullscreen e blocco orientamento con fallback di sicurezza per vecchi browser
+  try {
+    if (document.documentElement.requestFullscreen) {
+      const fsPromise = document.documentElement.requestFullscreen();
+      if (fsPromise && fsPromise.then) {
+        fsPromise.then(() => {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+        }).catch(() => {});
       }
-    }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('Fullscreen non supportato', err);
   }
 
   state.score   = [0, 0];
