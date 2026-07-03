@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PONG 3D — Neon Arena</title>
+  <meta name="description" content="Un gioco Pong 3D con grafica neon, effetti di luce e intelligenza artificiale, realizzato con Three.js." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── OVERLAY: MENU ── -->
+  <div id="menu-overlay" class="overlay active">
+    <div class="menu-card glass">
+      <div class="logo-container">
+        <div class="logo-glow"></div>
+        <h1 class="logo-title">PONG <span class="accent">3D</span></h1>
+        <p class="logo-sub">NEON ARENA</p>
+      </div>
+
+      <div class="mode-selector">
+        <p class="label">Modalità di Gioco</p>
+        <div class="mode-btns">
+          <button id="btn-vs-ai" class="mode-btn active" aria-label="Gioca contro l'IA">
+            <span class="mode-icon">🤖</span>
+            <span>VS Intelligenza Artificiale</span>
+          </button>
+          <button id="btn-vs-player" class="mode-btn" aria-label="Gioca in due giocatori">
+            <span class="mode-icon">👥</span>
+            <span>2 Giocatori Locali</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="difficulty-selector" id="difficulty-section">
+        <p class="label">Difficoltà IA</p>
+        <div class="diff-btns">
+          <button id="diff-easy"   class="diff-btn" data-diff="easy">Facile</button>
+          <button id="diff-medium" class="diff-btn active" data-diff="medium">Medio</button>
+          <button id="diff-hard"   class="diff-btn" data-diff="hard">Difficile</button>
+        </div>
+      </div>
+
+      <div class="controls-hint">
+        <div class="ctrl-row">
+          <span class="ctrl-key">W / S</span><span>Giocatore 1</span>
+          <span class="ctrl-key sep">↑ / ↓</span><span>Giocatore 2 (2P)</span>
+        </div>
+        <div class="ctrl-row" style="margin-top:8px;">
+          <span class="ctrl-key">ESC</span><span>Pausa</span>
+        </div>
+      </div>
+
+      <button id="btn-start" class="btn-primary" aria-label="Inizia la partita">
+        <span class="btn-text">INIZIA PARTITA</span>
+        <div class="btn-shine"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── OVERLAY: GAME OVER ── -->
+  <div id="gameover-overlay" class="overlay">
+    <div class="menu-card glass">
+      <h2 id="winner-text" class="winner-title"></h2>
+      <p id="final-score" class="final-score"></p>
+      <div class="go-btns">
+        <button id="btn-rematch" class="btn-primary" aria-label="Rivincita">RIVINCITA</button>
+        <button id="btn-menu"    class="btn-secondary" aria-label="Torna al menu">MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HUD ── -->
+  <div id="hud" class="hidden">
+    <div class="score-panel">
+      <div class="score-side left">
+        <span class="player-label" id="label-left">GIOCATORE</span>
+        <span class="score-value" id="score-left">0</span>
+      </div>
+      <div class="score-divider">
+        <div class="divider-line"></div>
+        <span class="score-colon">:</span>
+        <div class="divider-line"></div>
+      </div>
+      <div class="score-side right">
+        <span class="score-value" id="score-right">0</span>
+        <span class="player-label" id="label-right">IA</span>
+      </div>
+    </div>
+    <div id="countdown" class="countdown hidden"></div>
+    <button id="btn-pause" class="hud-btn" aria-label="Pausa">⏸</button>
+  </div>
+
+  <!-- ── CANVAS ── -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ── Three.js CDN ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

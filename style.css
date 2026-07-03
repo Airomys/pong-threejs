@@ -1,0 +1,373 @@
+/* ══════════════════════════════════════════
+   PONG 3D – Neon Arena  |  style.css
+   ══════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --neon-cyan:    #00f5ff;
+  --neon-pink:    #ff007a;
+  --neon-purple:  #8a2be2;
+  --neon-yellow:  #ffd700;
+  --bg-dark:      #050510;
+  --bg-card:      rgba(10, 10, 30, 0.85);
+  --glass-border: rgba(0, 245, 255, 0.18);
+  --text-primary: #e8e8ff;
+  --text-muted:   #8888bb;
+  --font-game:    'Orbitron', sans-serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --radius:       16px;
+  --transition:   0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+}
+
+/* ─── Canvas ─── */
+#game-canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* ─── Overlays ─── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: rgba(5, 5, 16, 0.65);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ─── Glass Card ─── */
+.glass {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 48px 56px;
+  width: min(520px, 90vw);
+  box-shadow:
+    0 0 60px rgba(0, 245, 255, 0.08),
+    0 0 120px rgba(138, 43, 226, 0.06),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  align-items: center;
+  text-align: center;
+  animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes cardIn {
+  from { transform: scale(0.88) translateY(20px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+/* ─── Logo ─── */
+.logo-container { position: relative; width: 100%; }
+.logo-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px; height: 80px;
+  background: radial-gradient(ellipse, rgba(0,245,255,0.25) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+.logo-title {
+  font-family: var(--font-game);
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(0,245,255,0.6), 0 0 60px rgba(0,245,255,0.3);
+}
+.logo-title .accent {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px var(--neon-cyan);
+}
+.logo-sub {
+  font-family: var(--font-game);
+  font-size: 0.65rem;
+  letter-spacing: 0.45em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── Labels ─── */
+.label {
+  font-family: var(--font-game);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ─── Mode Selector ─── */
+.mode-selector, .difficulty-selector { width: 100%; }
+.mode-btns { display: flex; flex-direction: column; gap: 10px; }
+.mode-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.mode-btn:hover {
+  background: rgba(0,245,255,0.06);
+  border-color: rgba(0,245,255,0.3);
+}
+.mode-btn.active {
+  background: rgba(0,245,255,0.1);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0,245,255,0.15);
+}
+.mode-icon { font-size: 1.3rem; }
+
+/* ─── Difficulty Buttons ─── */
+.diff-btns { display: flex; gap: 8px; justify-content: center; }
+.diff-btn {
+  flex: 1;
+  padding: 10px 0;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-game);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.diff-btn:hover { border-color: rgba(0,245,255,0.4); color: var(--text-primary); }
+.diff-btn.active {
+  background: rgba(0,245,255,0.12);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+/* ─── Controls Hint ─── */
+.controls-hint {
+  width: 100%;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.ctrl-row {
+  display: flex; align-items: center; gap: 10px;
+  justify-content: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.ctrl-key {
+  background: rgba(0,245,255,0.1);
+  border: 1px solid rgba(0,245,255,0.3);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-family: var(--font-game);
+  font-size: 0.65rem;
+  color: var(--neon-cyan);
+}
+.ctrl-key.sep { margin-left: 14px; }
+
+/* ─── Primary Button ─── */
+.btn-primary {
+  position: relative;
+  width: 100%;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--font-game);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: 0 4px 30px rgba(0,245,255,0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(0,245,255,0.35);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-shine {
+  position: absolute;
+  top: 0; left: -80%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.22) 50%, transparent 80%);
+  animation: shine 2.5s infinite;
+}
+@keyframes shine { 0%,100% { left: -80%; } 60% { left: 120%; } }
+
+/* ─── Secondary Button ─── */
+.btn-secondary {
+  padding: 14px 32px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-game);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: var(--transition);
+  flex: 1;
+}
+.btn-secondary:hover { border-color: var(--neon-pink); color: var(--neon-pink); }
+
+/* ─── Game Over ─── */
+.winner-title {
+  font-family: var(--font-game);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 30px var(--neon-cyan);
+}
+.final-score {
+  font-family: var(--font-game);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.2em;
+}
+.go-btns {
+  display: flex; gap: 12px; width: 100%;
+}
+.go-btns .btn-primary { flex: 1; }
+
+/* ─── HUD ─── */
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+#hud.hidden { display: none; }
+
+.score-panel {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(5,5,20,0.7);
+  border: 1px solid rgba(0,245,255,0.15);
+  border-radius: 60px;
+  padding: 10px 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0,245,255,0.08);
+}
+.score-side {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 70px;
+}
+.score-side.left { align-items: flex-end; }
+.score-side.right { align-items: flex-start; }
+.player-label {
+  font-family: var(--font-game);
+  font-size: 0.48rem;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.score-value {
+  font-family: var(--font-game);
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(0,245,255,0.5);
+  transition: transform 0.15s, color 0.15s;
+}
+.score-value.pop {
+  transform: scale(1.35);
+  color: var(--neon-cyan);
+}
+.score-divider {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px;
+}
+.divider-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(to bottom, transparent, rgba(0,245,255,0.4), transparent);
+}
+.score-colon {
+  font-family: var(--font-game);
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* ─── Countdown ─── */
+.countdown {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-game);
+  font-size: clamp(4rem, 14vw, 9rem);
+  font-weight: 900;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 40px var(--neon-cyan), 0 0 100px rgba(0,245,255,0.4);
+  animation: countAnim 0.8s ease-out;
+}
+.countdown.hidden { display: none; }
+@keyframes countAnim {
+  from { transform: translate(-50%,-50%) scale(2); opacity: 0; }
+  to   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+}
+
+/* ─── Pause Button ─── */
+#btn-pause {
+  position: absolute;
+  top: 18px; right: 22px;
+  pointer-events: all;
+  background: rgba(5,5,20,0.7);
+  border: 1px solid rgba(0,245,255,0.15);
+  border-radius: 50%;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+#btn-pause:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { display: none; }
