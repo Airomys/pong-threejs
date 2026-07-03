@@ -37,7 +37,7 @@ let paddles = { left: 0, right: 0 };
 let paddleVel = { left: 0, right: 0 };  // velocità corrente dei paddle
 
 // Touch
-let touchYNorm = { left: null, right: null };
+let touchState = { left: { id: null, y: null }, right: { id: null, y: null } };
 
 // ─────────────────────────────────────────────
 //  RENDERER
@@ -57,7 +57,14 @@ camera.lookAt(0, 0, 0);
 
 function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = aspect;
+  
+  // Calcolo FOV e Z per garantire che la larghezza (FIELD_W + margine) sia visibile
+  const fovRad = (camera.fov * Math.PI) / 360;
+  const requiredZ = (FIELD_W + 4) / (2 * Math.tan(fovRad) * aspect);
+  camera.position.z = Math.max(24, requiredZ);
+  
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize);
@@ -310,27 +317,50 @@ window.addEventListener('keyup', e => {
   delete keys[e.code];
 });
 
-// ── Touch: metà sinistra = P1, metà destra = P2 (Supporto Multi-Touch) ──
-function handleTouches(e) {
-  if (e.cancelable) e.preventDefault();
-  touchYNorm.left  = null;
-  touchYNorm.right = null;
-  for (let i = 0; i < e.touches.length; i++) {
-    const t = e.touches[i];
+// ── Touch: metà sinistra = P1, metà destra = P2 ──
+window.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
     const norm = 1 - (t.clientY / window.innerHeight) * 2;
-    if (t.clientX < window.innerWidth / 2) touchYNorm.left  = norm;
-    else                                   touchYNorm.right = norm;
+    if (t.clientX < window.innerWidth / 2) {
+      if (touchState.left.id === null) { touchState.left.id = t.identifier; touchState.left.y = norm; }
+    } else {
+      if (touchState.right.id === null) { touchState.right.id = t.identifier; touchState.right.y = norm; }
+    }
+  }
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  e.preventDefault();
+  for (const t of e.touches) {
+    const norm = 1 - (t.clientY / window.innerHeight) * 2;
+    if (t.identifier === touchState.left.id) touchState.left.y = norm;
+    else if (t.identifier === touchState.right.id) touchState.right.y = norm;
+  }
+}, { passive: false });
+
+function handleTouchEnd(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touchState.left.id) { touchState.left.id = null; touchState.left.y = null; }
+    if (t.identifier === touchState.right.id) { touchState.right.id = null; touchState.right.y = null; }
   }
 }
-window.addEventListener('touchstart', handleTouches, { passive: false });
-window.addEventListener('touchmove', handleTouches, { passive: false });
-window.addEventListener('touchend', handleTouches);
-window.addEventListener('touchcancel', handleTouches);
+window.addEventListener('touchend', handleTouchEnd);
+window.addEventListener('touchcancel', handleTouchEnd);
 
 // ─────────────────────────────────────────────
 //  GAME FLOW
 // ─────────────────────────────────────────────
 function startGame() {
+  // Richiesta Fullscreen e blocco orientamento
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().then(() => {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }).catch(() => {});
+  }
+
   state.score   = [0, 0];
   state.paused  = false;
   state.running = true;
@@ -403,6 +433,7 @@ function resetBall() {
   ball.vy = Math.sin(angle);
   const len = Math.hypot(ball.vx, ball.vy);
   ball.vx /= len; ball.vy /= len;
+  updateAITargetError();
 }
 
 function togglePause() {
@@ -452,9 +483,9 @@ const P_DAMP   = 0.08; // smorzamento al rilascio (0=stop istantaneo, 1=nessun f
 function movePaddle(side, upKey, downKey, dt) {
   const limit = maxPY();
 
-  if (touchYNorm[side] !== null) {
+  if (touchState[side].id !== null && touchState[side].y !== null) {
     // Touch: posizionamento diretto, smorzato
-    const target = touchYNorm[side] * limit;
+    const target = touchState[side].y * limit;
     paddleVel[side]  = (target - paddles[side]) / dt * 0.35;
     paddles[side]   += (target - paddles[side]) * Math.min(1, 14 * dt);
   } else if (keys[upKey]) {
@@ -492,8 +523,8 @@ function update(dt) {
 
   // Rimbalzo muri
   const wallY = FIELD_H / 2 - BALL_RADIUS;
-  if (ball.y > wallY)  { ball.y =  wallY; ball.vy = -Math.abs(ball.vy); cameraShake = 0.07; }
-  if (ball.y < -wallY) { ball.y = -wallY; ball.vy =  Math.abs(ball.vy); cameraShake = 0.07; }
+  if (ball.y > wallY)  { ball.y =  wallY; ball.vy = -Math.abs(ball.vy); cameraShake = 0.07; updateAITargetError(); }
+  if (ball.y < -wallY) { ball.y = -wallY; ball.vy =  Math.abs(ball.vy); cameraShake = 0.07; updateAITargetError(); }
 
   // Collisioni paddle
   collidePaddle();
@@ -539,6 +570,7 @@ function deflect(paddleY, dirX) {
   ball.vx /= len; ball.vy /= len;
   ball.speed = Math.min(ball.speed + BALL_SPEED_INC, 26);
   cameraShake = 0.14;
+  updateAITargetError(); // Ricalcola errore IA
 
   // Flash paddle
   const mat = dirX > 0 ? matPaddleL : matPaddleR;
@@ -550,25 +582,22 @@ function deflect(paddleY, dirX) {
 // ─────────────────────────────────────────────
 //  IA
 // ─────────────────────────────────────────────
-let aiTargetY = 0;
-let aiCalculated = false;
+let aiTargetOffset = 0;
+
+function updateAITargetError() {
+  const err = state.difficulty === 'easy' ? 1.9 : state.difficulty === 'medium' ? 0.85 : 0.22;
+  aiTargetOffset = (Math.random() - 0.5) * err;
+}
 
 function updateAI(dt) {
   const speedFactor = AI_SPEED[state.difficulty] || AI_SPEED.medium;
-  
-  if (ball.vx <= 0) {
-    aiTargetY = 0; // La palla si allontana, torna al centro
-    aiCalculated = false;
-  } else if (!aiCalculated) {
-    let target = predictBallY();
-    // Errore calcolato una sola volta per direzione per evitare tremolio
-    const err = state.difficulty === 'easy' ? 1.9 : state.difficulty === 'medium' ? 0.85 : 0.22;
-    target += (Math.random() - 0.5) * err;
-    aiTargetY = Math.max(-maxPY(), Math.min(maxPY(), target));
-    aiCalculated = true;
-  }
+  let target = predictBallY();
 
-  const diff = aiTargetY - paddles.right;
+  // Usa l'offset costante invece di casualità per-frame (evita jitter)
+  target += aiTargetOffset;
+  target = Math.max(-maxPY(), Math.min(maxPY(), target));
+
+  const diff = target - paddles.right;
   const step = Math.sign(diff) * Math.min(Math.abs(diff), PADDLE_SPEED * speedFactor * 60 * dt);
   paddles.right = Math.max(-maxPY(), Math.min(maxPY(), paddles.right + step));
 }

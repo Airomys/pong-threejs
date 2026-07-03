@@ -372,17 +372,25 @@ html, body {
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { display: none; }
 
-/* ─── Rotate Device Overlay ─── */
-#rotate-overlay {
-  display: none;
-  z-index: 1000;
-  background: var(--bg-dark);
+/* ─── Responsive & Mobile Orientations ─── */
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Mostra il rotate-overlay di default se in portrait */
+#rotate-overlay { display: none; z-index: 9999; background: rgba(5,5,16,0.95); }
+
+@media screen and (orientation: portrait) {
+  /* Se il dispositivo è in verticale, mostriamo a tutto schermo l'avviso */
+  #rotate-overlay { display: flex; opacity: 1; pointer-events: all; }
+  
+  /* Nascondiamo temporaneamente i controlli di gioco per evitare clic accidentali */
+  #menu-overlay, #hud, #gameover-overlay { display: none !important; }
 }
 
-@media screen and (orientation: portrait) and (max-width: 900px) {
-  #rotate-overlay {
-    display: flex !important;
-    opacity: 1 !important;
-    pointer-events: all !important;
-  }
+@media screen and (max-width: 768px) {
+  /* Ottimizzazioni font HUD per mobile */
+  .score-panel { top: 10px; padding: 6px 18px; border-radius: 40px; }
+  .score-value { font-size: 1.8rem; }
+  .score-colon { font-size: 1rem; }
+  .player-label { font-size: 0.4rem; }
+  #btn-pause { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 0.9rem; }
 }

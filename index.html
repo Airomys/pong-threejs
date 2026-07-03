@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PONG 3D — Neon Arena</title>
   <meta name="description" content="Un gioco Pong 3D con grafica neon, effetti di luce e intelligenza artificiale, realizzato con Three.js." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -73,14 +73,6 @@
     </div>
   </div>
 
-  <!-- ── OVERLAY: ROTATE DEVICE ── -->
-  <div id="rotate-overlay" class="overlay">
-    <div class="menu-card glass">
-      <h2 class="winner-title" style="font-size: 1.8rem;">RUOTA IL DISPOSITIVO</h2>
-      <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.9rem;">Per favore, usa il dispositivo in orizzontale per giocare.</p>
-    </div>
-  </div>
-
   <!-- ── HUD ── -->
   <div id="hud" class="hidden">
     <div class="score-panel">
@@ -100,6 +92,15 @@
     </div>
     <div id="countdown" class="countdown hidden"></div>
     <button id="btn-pause" class="hud-btn" aria-label="Pausa">⏸</button>
+  </div>
+
+  <!-- ── OVERLAY: ROTATE DEVICE ── -->
+  <div id="rotate-overlay" class="overlay">
+    <div class="menu-card glass" style="padding: 30px;">
+      <div style="font-size: 3rem; margin-bottom: 10px; animation: spin 2s linear infinite;">🔄</div>
+      <h2 style="font-family: var(--font-game); font-size: 1.5rem; color: var(--neon-cyan); letter-spacing: 0.1em;">RUOTA IL DISPOSITIVO</h2>
+      <p style="color: var(--text-muted); margin-top: 10px; font-weight: 600;">Il gioco richiede la modalità orizzontale.</p>
+    </div>
   </div>
 
   <!-- ── CANVAS ── -->
